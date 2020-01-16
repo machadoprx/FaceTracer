@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "362618971870",
+    "firebase_url": "https://facetrace-110c0.firebaseio.com",
+    "project_id": "facetrace-110c0",
+    "storage_bucket": "facetrace-110c0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362618971870:android:3401fb8772fa5b39f3044f",
+        "android_client_info": {
+          "package_name": "com.example.facetracera"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "362618971870-aq3g4qopu0d1teeukr762lsik38ho362.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9LS1z0PmJV2jIqkZRqKJBGvfcrNSf6a4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "362618971870-aq3g4qopu0d1teeukr762lsik38ho362.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
