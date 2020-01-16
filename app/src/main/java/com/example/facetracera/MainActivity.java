@@ -75,24 +75,28 @@ public class MainActivity extends AppCompatActivity {
                                         return;
                                     FirebaseVisionFace face = faces.get(0);
                                     float rotZ = face.getHeadEulerAngleZ();
-                                    Rect bound = face.getBoundingBox();
                                     Bitmap originalBitmap = img.getBitmap();
-                                    Bitmap boundBitmap = Bitmap.createBitmap(originalBitmap, bound.centerX() - (bound.width() / 2), bound.centerY() - (bound.height() / 2), bound.width(), bound.height());
-                                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(boundBitmap, bound.width(), bound.height(), true); // 70x70
+                                    Rect faceBound = face.getBoundingBox();
+                                    Bitmap boundBitmap = Bitmap.createBitmap(originalBitmap,
+                                            faceBound.centerX() - (faceBound.width() / 2),
+                                            faceBound.centerY() - (faceBound.height() / 2),
+                                            faceBound.width(), faceBound.height());
+
+                                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(boundBitmap, faceBound.width(), faceBound.height(), true); // 70x70
                                     Bitmap croppedBitmap = FaceTransform.getCroppedBitmap(scaledBitmap);
-                                    Bitmap rotateBitmap = FaceTransform.rotateBitmap(croppedBitmap, rotZ);
-                                    Bitmap image = Bitmap.createScaledBitmap(rotateBitmap, 48, 48, true);
+                                    Bitmap rotatedBitmap = FaceTransform.rotateBitmap(croppedBitmap, rotZ);
+                                    Bitmap image = Bitmap.createScaledBitmap(rotatedBitmap, (int)(100 * 0.85), 100, true);
 
                                     ImageView view;
                                     if(reqC == PICK_IMAGE_FOR_VIEW_1){
-                                        face1_hist = new FaceTracer(image).getLBPHistogram();
+                                        face1_hist = new FaceTracer(image).getOCLBPHistogram();
                                         view = findViewById(R.id.imageView);
                                     }
                                     else{
-                                        face2_hist = new FaceTracer(image).getLBPHistogram();
+                                        face2_hist = new FaceTracer(image).getOCLBPHistogram();
                                         view = findViewById(R.id.imageView2);
                                     }
-                                    Bitmap viewBmp = Bitmap.createScaledBitmap(image, 200, 200, true);
+                                    Bitmap viewBmp = Bitmap.createScaledBitmap(rotatedBitmap, 350, 350, false);
                                     view.setImageBitmap(viewBmp);
                                 }
                             })

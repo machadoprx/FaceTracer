@@ -2,18 +2,22 @@ package com.example.facetracera;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+
 import java.util.Arrays;
 
 class FaceTracer {
     private Bitmap CompFace;
-    private static int[] binPatterns = {0, 1, 2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 24, 28, 30, 31, 32, 48, 56, 60, 62, 63,
+    private int[] binPatterns = {0, 1, 2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 24, 28, 30, 31, 32, 48, 56, 60, 62, 63,
             64, 96, 112, 120, 124, 126, 127, 128, 129, 131, 135, 143, 159, 191, 192, 193,
             195, 199, 207, 223, 224, 225, 227, 231, 239, 240, 241, 243, 247, 248, 249, 251,
             252, 253, 254, 255};
-    private static int gridVector = 59;
+    private int width;
+    private int height;
 
     FaceTracer(Bitmap realImage) {
         this.CompFace = realImage;
+        this.width = realImage.getWidth();
+        this.height = realImage.getHeight();
     }
 
     private double getGrayScalePixel(int x, int y) {
@@ -32,71 +36,98 @@ class FaceTracer {
             double gyi = y - (radius * Math.sin(2 * Math.PI * i / 8));
             int xi = (int)Math.floor(gxi);
             int yi = (int)Math.floor(gyi);
+
             double iPixel;
-            if (gxi % 1 != 0 || gyi % 1 != 0){
-                double i1 = (xi + 1 - gxi) * getGrayScalePixel(xi, yi);
-                i1 += (gxi - xi) * getGrayScalePixel(xi + 1, yi);
-                double i2 = (xi + 1 - gxi) * getGrayScalePixel(xi, yi + 1);
-                i2 += (gxi - xi) * getGrayScalePixel(xi + 1, yi + 1);
-                iPixel = (yi + 1 - gyi) * i1;
-                iPixel += (gyi - yi) * i2;
-            }
-            else {
-                iPixel = getGrayScalePixel(xi, yi);
-            }
+            double i1 = (xi + 1 - gxi) * getGrayScalePixel(xi, yi);
+            i1 += (gxi - xi) * getGrayScalePixel(xi + 1, yi);
+            double i2 = (xi + 1 - gxi) * getGrayScalePixel(xi, yi + 1);
+            i2 += (gxi - xi) * getGrayScalePixel(xi + 1, yi + 1);
+            iPixel = (yi + 1 - gyi) * i1;
+            iPixel += (gyi - yi) * i2;
+
             newPixel += (iPixel >= threshold) ? Math.pow(2, i) : 0;
         }
         return newPixel;
     }
 
-    private void fillGridHistogram(int startX, int startY, int endX, int endY, int radius,
-                                   int grid, int offset, int[] hist){
+    private int binSearch(int[] arr, int key){
+        int end = arr.length;
+        int start = 0;
+        while (start <= end){
+            int mid = start + ((end - start) / 2);
+            if (arr[mid] == key)
+                return mid;
+            else if (arr[mid] < key)
+                start = mid + 1;
+            else
+                end = mid - 1;
+        }
+        return -1;
+    }
+
+    private int[] getPixelsArray(int radius){
+        int[] pixelsArray = new int[this.width * this.height];
+        Arrays.fill(pixelsArray, -1);
+        // array[width * y + x] = value;
+        for (int y = radius; y < this.height - radius - 1; y++) {
+            for (int x = radius; x < this.width - radius - 1; x++) {
+                pixelsArray[(this.width * y) + x] = getLBPPixel(x, y, radius);
+            }
+        }
+        return pixelsArray;
+    }
+
+    private void fillGridHistogram(int[] pixelsArray, int startX, int startY, int endX,
+                                   int endY, int grid, int offset, int[] hist){
+        int gridVector = 59;
         for (int y = startY; y <= endY; y++) {
             for (int x = startX; x <= endX; x++) {
-                if (x + radius + 1 >= this.CompFace.getWidth()
-                    || y + radius + 1 >= this.CompFace.getHeight()
-                    || x - radius < 0
-                    || y - radius < 0)
+                int newPixel = pixelsArray[(this.width * y) + x];
+                if(newPixel == -1)
                     continue;
-
-                int newPixel = getLBPPixel(x, y, radius);
-                int featureIndex = Arrays.binarySearch(FaceTracer.binPatterns, newPixel);
-
-                if (featureIndex < 0)
-                    hist[(grid * FaceTracer.gridVector) + offset]++;
-                else
-                    hist[(grid * FaceTracer.gridVector) + (featureIndex + 1) + offset]++;
+                int featureIndex = binSearch(this.binPatterns, newPixel);
+                hist[(grid * gridVector) + (featureIndex + 1) + offset]++;
             }
         }
     }
 
-    private void fillHistogram(int blocksX, int blocksY, int radius, int offset, int[] histogram) {
+    private int fillHistogram(int blockWidth, int blockHeight, int radius, int offset, int[] histogram) {
 
-        int imageWidth = this.CompFace.getWidth();
-        int imageHeight = this.CompFace.getHeight();
-        int blockWidth = (2 * imageWidth) / (blocksX + 1);
-        int blockHeight = (2 * imageHeight) / (blocksY + 1);
-        int startX = 0, startY = 0;
+        int blocksX = (int)Math.ceil((2 * (double)this.width / (double)blockWidth));
+        int blocksY = (int)Math.ceil((2 * (double)this.height / (double)blockHeight));
+        int startX = 0, startY = 0, grid = 0, endX = blockWidth, endY = blockHeight;
+
+        int[] pixelsArray = getPixelsArray(radius);
 
         for (int j = 0; j < blocksY; j++) {
             for (int i = 0; i < blocksX; i++) {
-                fillGridHistogram(startX, startY, startX + blockWidth,
-                        startY + blockHeight, radius,i + j, offset, histogram);
+                fillGridHistogram(pixelsArray, startX, startY, endX, endY, grid, offset, histogram);
                 startX += (blockWidth / 2);
+                endX = (startX + blockWidth) >= this.width ? (this.width - 1) : (startX + blockWidth);
+                grid++;
             }
             startY += (blockHeight / 2);
+            endY = (startY + blockHeight) >= this.height ? (this.height - 1) : (startY + blockHeight);
             startX = 0;
         }
+        return blocksX * blocksY * 59;
     }
 
-    int[] getLBPHistogram() {
+    int[] getOCLBPHistogram() {
+        int featuresDimension = 0, offset = 0;
+        int[] blocksDim = {10, 14, 18};
 
-        int[] LBPH = new int[36580];
+        for (int dim : blocksDim){
+            int blocksX = (int)Math.ceil((2 * (double)this.width / (double)dim));
+            int blocksY = (int)Math.ceil((2 * (double)this.height / (double)dim));
+            featuresDimension += blocksX * blocksY;
+        }
+        int[] hist = new int[featuresDimension * 59];
 
-        this.fillHistogram(10, 10, 1, 0, LBPH);
-        this.fillHistogram(14, 14, 2, 5900, LBPH);
-        this.fillHistogram(18, 18, 3, 17464, LBPH);
-
-        return LBPH;
+        offset += this.fillHistogram(10, 10, 1, 0, hist);
+        offset += this.fillHistogram(14, 14, 2, offset, hist);
+        this.fillHistogram(18, 18, 3, offset, hist);
+        //Log.wtf("xama", String.format("%d", featuresDimension * 59));
+        return hist;
     }
 }

@@ -55,7 +55,7 @@ public class FaceClassifier {
                     if (img.getWidth() != this.dataSetWidth || img.getHeight() != this.dataSetHeight){
                         throw new AssertionError();
                     }
-                    int[] aFaceFeaturesHist = new FaceTracer(img).getLBPHistogram();
+                    int[] aFaceFeaturesHist = new FaceTracer(img).getOCLBPHistogram();
                     faceClassHistograms.add(aFaceFeaturesHist);
                 }
                 this.dataSetHistograms.put(aClass, faceClassHistograms);
@@ -68,12 +68,30 @@ public class FaceClassifier {
     }
 
     static double getEuclideanDist(int[] hist1, int[] hist2){
+        if (hist1.length != hist2.length)
+            return -1;
         double dist = 0;
         for (int j = 0; j < hist1.length; j++) { //aq
             dist += (Math.pow(hist1[j] - hist2[j], 2));
         }
         dist = Math.sqrt(dist);
         return dist;
+    }
+
+    static double getCosineSim(int[] hist1, int[] hist2){
+        if (hist1.length != hist2.length)
+            return -1;
+        double num = 0;
+        double den1 = 0;
+        double den2 = 0;
+        for (int i = 0; i < hist1.length; i++) { //aq
+            num += hist1[i] * hist2[i];
+            den1 += hist1[i] * hist1[i];
+            den2 += hist2[i] * hist2[i];
+        }
+        den1 = Math.sqrt(den1);
+        den2 = Math.sqrt(den2);
+        return num / (den1 * den2);
     }
 
     public HashMap<String, Integer> kNNClassification(String facePath, int k) {
@@ -86,7 +104,7 @@ public class FaceClassifier {
             throw new AssertionError("image size should be (WxH) : " + this.dataSetWidth + "x" + this.dataSetHeight);
 
         FaceTracer faceFeaturesObj = new FaceTracer(faceImage);
-        faceFeatures = faceFeaturesObj.getLBPHistogram();
+        faceFeatures = faceFeaturesObj.getOCLBPHistogram();
 
         ArrayList<PairV> allEucDistances = new ArrayList<>();
         for (String c : this.dataSetHistograms.keySet()){
