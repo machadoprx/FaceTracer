@@ -9,7 +9,20 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 
 public class FaceTransform {
-    static Bitmap getCroppedBitmap(Bitmap bitmap) {
+
+    static Bitmap processImage(Bitmap originalBitmap, Rect faceBound, int width, int height, float rotation){
+        Bitmap boundBitmap = Bitmap.createBitmap(originalBitmap,
+                faceBound.centerX() - (faceBound.width() / 2),
+                faceBound.centerY() - (faceBound.height() / 2),
+                faceBound.width(), faceBound.height());
+
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(boundBitmap, faceBound.width(), faceBound.height(), false); // 70x70
+        Bitmap croppedBitmap = FaceTransform.getCroppedBitmap(scaledBitmap);
+        Bitmap rotatedBitmap = FaceTransform.rotateBitmap(croppedBitmap, rotation);
+        return Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
+    }
+
+    private static Bitmap getCroppedBitmap(Bitmap bitmap) {
         Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
                 bitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(output);
@@ -28,7 +41,7 @@ public class FaceTransform {
         return output;
     }
 
-    static Bitmap rotateBitmap(Bitmap bitmap, float rotationAngleDegree){
+    private static Bitmap rotateBitmap(Bitmap bitmap, float rotationAngleDegree){
 
         int w = bitmap.getWidth();
         int h = bitmap.getHeight();

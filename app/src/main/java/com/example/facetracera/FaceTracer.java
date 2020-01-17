@@ -93,23 +93,25 @@ class FaceTracer {
 
     private int fillHistogram(int blockWidth, int blockHeight, int radius, int offset, int[] histogram) {
 
-        int blocksX = (int)Math.ceil((2 * (double)this.width / (double)blockWidth));
-        int blocksY = (int)Math.ceil((2 * (double)this.height / (double)blockHeight));
-        int startX = 0, startY = 0, grid = 0, endX = blockWidth, endY = blockHeight;
+        int blocksX = (int)Math.floor((2 * (double)this.width / (double)blockWidth)) - 1;
+        int blocksY = (int)Math.floor((2 * (double)this.height / (double)blockHeight)) - 1;
+        int startX = 0, startY = 0, grid = 0;
 
         int[] pixelsArray = getPixelsArray(radius);
 
         for (int j = 0; j < blocksY; j++) {
+            int endY = startY + blockHeight;
             for (int i = 0; i < blocksX; i++) {
+                int endX = startX + blockWidth;
+                //Log.wtf("xama", String.format("%d %d %d %d", startX, endX, startY, endY));
                 fillGridHistogram(pixelsArray, startX, startY, endX, endY, grid, offset, histogram);
                 startX += (blockWidth / 2);
-                endX = (startX + blockWidth) >= this.width ? (this.width - 1) : (startX + blockWidth);
                 grid++;
             }
             startY += (blockHeight / 2);
-            endY = (startY + blockHeight) >= this.height ? (this.height - 1) : (startY + blockHeight);
             startX = 0;
         }
+
         return blocksX * blocksY * 59;
     }
 
@@ -118,8 +120,8 @@ class FaceTracer {
         int[] blocksDim = {10, 14, 18};
 
         for (int dim : blocksDim){
-            int blocksX = (int)Math.ceil((2 * (double)this.width / (double)dim));
-            int blocksY = (int)Math.ceil((2 * (double)this.height / (double)dim));
+            int blocksX = (int)Math.floor((2 * (double)this.width / (double)dim)) - 1;
+            int blocksY = (int)Math.floor((2 * (double)this.height / (double)dim)) - 1;
             featuresDimension += blocksX * blocksY;
         }
         int[] hist = new int[featuresDimension * 59];
