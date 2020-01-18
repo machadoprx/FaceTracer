@@ -1,11 +1,9 @@
 package com.example.facetracera;
 
-import android.graphics.Bitmap;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 
-public class FaceClassifier {
+class FaceClassifier {
 
     static class PairV{
         String first;
@@ -28,27 +26,19 @@ public class FaceClassifier {
     }
 
     HashMap<String, Integer> kNNClassification(int[] faceFeatures, int k) {
-        int sample = 0;
         ArrayList<PairV> similarity = new ArrayList<>();
-        for (String label : this.dataSetHistograms.keySet()){
-            ArrayList<int[]> classHistograms = this.dataSetHistograms.get(label);
+        for (String label : dataSetHistograms.keySet()){
+            ArrayList<int[]> classHistograms = dataSetHistograms.get(label);
+            assert classHistograms != null;
             for(int[] hist : classHistograms){
-                sample++;
-                double cosineSim = 1 - getCosineSim(hist, faceFeatures);
+                double cosineSim = -getCosineSim(hist, faceFeatures);
                 similarity.add(new PairV(label, cosineSim));
             }
         }
 
-        similarity.sort(new Comparator<PairV>() {
-            public int compare(PairV o1, PairV o2) {
-                return Double.compare(o1.second, o2.second);
-            }
-        });
+        similarity.sort((o1, o2) -> Double.compare(o1.second, o2.second));
 
         HashMap<String, Integer> kNN = new HashMap<>();
-        if(sample < k){
-            k = sample / 2;
-        }
         for (int i = 0; i < k; i++) {
             String key = similarity.get(i).first;
             if(kNN.containsKey(key)){
@@ -89,7 +79,7 @@ public class FaceClassifier {
         return num / (den1 * den2);
     }
 
-    public HashMap<String, ArrayList<int[]>> getClassesFeatures(){
+    HashMap<String, ArrayList<int[]>> getClassesFeatures(){
         return this.dataSetHistograms;
     }
 }
